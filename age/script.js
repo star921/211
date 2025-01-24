@@ -8,7 +8,6 @@ const loadImg = document.getElementById('loadImg')
 // 讓輸入框圓角一點  需要 jquery-ui.min.js 和 jquery-ui.min.css
 $('input:text').addClass("ui-widget ui-widget-content ui-corner-all ui-textfield");
 
-
 // 儲存 cookie 的值(cookie的名字、cookie的值、儲存的天數)
 function setCookie(cname,cvalue,exdays)
 {
@@ -52,7 +51,6 @@ function checkCookie()
   key = inputtext.value
   name = inputtextUser.value
 
-  //if (key != "" && key != null)
   if(key != last_key)
   {
     setCookie("key",key,30);
@@ -80,31 +78,21 @@ Promise.all([
   ]).then(startVideo)
 
 async function startVideo(){
-  await navigator.mediaDevices.getUserMedia({video: {}},)   
+  await navigator.mediaDevices.getUserMedia({video: {}})   
     .then(function(stream){
       console.log("setting")
       video1.setAttribute("autoplay", "true");
       video1.setAttribute("playsinline", "true");
       video1.setAttribute("muted", "true");
       video1.setAttribute("loop", "true");
-      //video1.setAttribute("controls", "true");
       video1.srcObject = stream;
     })
     await video1.play();
     recognizeFaces()
-  }
-
-
-function wait(ms){ 
-    var start = new Date().getTime(); 
-    var end = start; 
-    while(end < start + ms) { 
-    end = new Date().getTime(); 
-    } 
 }
 
 var start = new Date().getTime();
-var end = new Date().getTime()-2000;
+var end = new Date().getTime()-5000;
 var displaySize;
 
 function recognizeFaces(){
@@ -115,37 +103,35 @@ function recognizeFaces(){
     displaySize = { width: video1.offsetWidth, height: video1.offsetHeight }
     faceapi.matchDimensions(canvas, displaySize)
     setInterval(async () => {
-    inputtext.style.width = video1.offsetWidth.toString()+"px"
-    inputtext.style.height = video1.offsetHeight.toString()/8+"px"
-    inputtextUser.style.width = video1.offsetWidth.toString()+"px"
-    inputtextUser.style.height = video1.offsetHeight.toString()/8+"px"
+    inputtext.style.width = video1.offsetWidth.toString() + "px"
+    inputtext.style.height = video1.offsetHeight.toString() / 8 + "px"
+    inputtextUser.style.width = video1.offsetWidth.toString() + "px"
+    inputtextUser.style.height = video1.offsetHeight.toString() / 8 + "px"
     displaySize = { width: video1.offsetWidth, height: video1.offsetHeight }
     faceapi.matchDimensions(canvas, displaySize)
+    
     // 年紀性別
     const detections = await faceapi.detectAllFaces(video1, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender()          
-    // 得到的結果
     const resizedDetections = faceapi.resizeResults(detections, displaySize)
     start = new Date().getTime();
     
     if(resizedDetections.length >= 1){
-        age = resizedDetections[0]['age']                // 年紀
-        box = resizedDetections[0]['detection']['_box']  
-        gender = resizedDetections[0]['gender']          // 性別
-        //console.log(start-end)
-        if(start-end >=2000){
+        const age = resizedDetections[0]['age'];                // 年紀
+        const gender = resizedDetections[0]['gender'];          // 性別
+
+        if(start - end >= 5000){ // 確保每 5 秒才執行
            console.log("send to adafruit")
            
             $.ajax({
-                url: "https://io.adafruit.com/api/v2/"+inputtextUser.value+"/feeds/age/data?X-AIO-Key="+inputtext.value,
+                url: "https://io.adafruit.com/api/v2/" + inputtextUser.value + "/feeds/age/data?X-AIO-Key=" + inputtext.value,
                 type: "POST",
                 data: {
-                  "value":parseInt(age)
+                  "value": parseInt(age)
                 },
               })
               
-            end = start
+            end = start;
         }
-        
     }
     
     mask.style.display = "none"
@@ -153,12 +139,7 @@ function recognizeFaces(){
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
     faceapi.draw.drawDetections(canvas, resizedDetections)
 
-    var dis_y = (video1.offsetHeight-video1.offsetWidth/1.337)/2   // 從左上角增加的距離
-    var dis_x = (video1.offsetWidth-video1.offsetHeight*1.337)/2
-
     resizedDetections.forEach(detection => {
-        canvas.style.left = getPosition(video1)["x"] + "px";
-        canvas.style.top = getPosition(video1)["y"] + "px";
         const { age, gender, genderProbability } = detection
         new faceapi.draw.DrawTextField([
             `${parseInt(age, 10)} years`,
@@ -167,9 +148,8 @@ function recognizeFaces(){
         })
  
     checkCookie()
-    }, 100)
+    }, 5000)  // 每 5 秒執行一次
 }
-
 
 // 取得元素位置
 function getPosition (element) {
@@ -181,4 +161,4 @@ function getPosition (element) {
       element = element.offsetParent;
     }
     return { x: x, y: y };
-  }
+}

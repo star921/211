@@ -167,7 +167,7 @@ function recognizeFaces(){
         })
  
     checkCookie()
-    }, 1000)
+    }, 100)
 }
 
 
